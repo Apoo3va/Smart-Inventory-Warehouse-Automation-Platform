@@ -1,0 +1,165 @@
+{
+  "name": "WF6: Audit Trail & Error Handling",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "audit-log",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "webhookId": "audit-log-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const event = $input.item.json.body;\nreturn {\n  event_id: 'EVT-' + new Date().getTime(),\n  timestamp: new Date().toISOString(),\n  workflow: event.workflow || 'Unknown',\n  event_type: event.event_type || 'INFO',\n  details: JSON.stringify(event.details || {}),\n  severity: event.severity || 'INFO'\n};"
+      },
+      "id": "2",
+      "name": "Format Log Entry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Audit_Trail",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "Append to Audit_Trail",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {},
+      "id": "4",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [100, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.item.json;\nreturn {\n  event_id: 'ERR-' + new Date().getTime(),\n  timestamp: new Date().toISOString(),\n  workflow: error.workflow.name,\n  event_type: 'ERROR',\n  details: JSON.stringify(error.error),\n  severity: 'CRITICAL'\n};"
+      },
+      "id": "5",
+      "name": "Format Error Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [300, 400]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Audit_Trail",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Append Error to Audit_Trail",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "channel": "#system-errors",
+        "text": "={{ 'CRITICAL ERROR in ' + $json.workflow + ': ' + $json.details }}",
+        "otherOptions": {}
+      },
+      "id": "7",
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [700, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Log Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Log Entry": {
+      "main": [
+        [
+          {
+            "node": "Append to Audit_Trail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Error Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Details": {
+      "main": [
+        [
+          {
+            "node": "Append Error to Audit_Trail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Error to Audit_Trail": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
