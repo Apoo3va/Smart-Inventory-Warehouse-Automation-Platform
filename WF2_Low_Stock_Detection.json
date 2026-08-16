@@ -1,0 +1,193 @@
+{
+  "name": "WF2: Low Stock Detection & Purchase Request",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "low-stock-trigger",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.items",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Item Lists",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Supplier_Registry",
+          "mode": "name"
+        },
+        "lookupColumn": "supplier_id",
+        "lookupValue": "={{ $json.supplier_id }}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Get Supplier Info",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "model": "llama3-70b-8192",
+        "messages": {
+          "messageValues": [
+            {
+              "content": "={{ 'Given product ' + $json.product_name + ' with current stock ' + $json.current_stock + ', reorder point ' + $json.reorder_point + ', max stock ' + $json.max_stock_level + ' and supplier avg delivery ' + $json.avg_delivery_days + ' days. Recommend optimal order quantity and reasoning. Respond with JSON: { \"quantity\": number, \"reasoning\": \"string\" }' }}"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "AI Predict Order Qty",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResult = JSON.parse($input.item.json.message.content);\nreturn {\n  po_id: 'PO-' + new Date().getTime(),\n  product_id: $node['Item Lists'].json.product_id,\n  supplier_id: $node['Item Lists'].json.supplier_id,\n  quantity_ordered: aiResult.quantity,\n  estimated_cost: aiResult.quantity * $node['Item Lists'].json.unit_price,\n  status: 'Pending',\n  created_at: new Date().toISOString(),\n  ai_recommendation: aiResult.reasoning\n};"
+      },
+      "id": "5",
+      "name": "Create PO Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Purchase_Orders",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Append to Purchase_Orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_WF3_WEBHOOK_URL_HERE",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "poData",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7",
+      "name": "Trigger WF3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1300, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Item Lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Lists": {
+      "main": [
+        [
+          {
+            "node": "Get Supplier Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Supplier Info": {
+      "main": [
+        [
+          {
+            "node": "AI Predict Order Qty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Predict Order Qty": {
+      "main": [
+        [
+          {
+            "node": "Create PO Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create PO Record": {
+      "main": [
+        [
+          {
+            "node": "Append to Purchase_Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Purchase_Orders": {
+      "main": [
+        [
+          {
+            "node": "Trigger WF3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
