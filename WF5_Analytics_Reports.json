@@ -1,0 +1,151 @@
+{
+  "name": "WF5: Inventory Analytics & Reports",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyWeek",
+              "weekday": "1",
+              "hour": 8
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Cron Trigger (Weekly)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Inventory_Master",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Read Inventory",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst lowCount = items.filter(i => i.current_stock <= i.reorder_point).length;\nconst overCount = items.filter(i => i.current_stock > i.max_stock_level * 1.2).length;\nreturn { summary: `Low stock: ${lowCount}, Overstocked: ${overCount}`, raw: items };"
+      },
+      "id": "3",
+      "name": "Aggregate Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "model": "llama3-70b-8192",
+        "messages": {
+          "messageValues": [
+            {
+              "content": "={{ 'Analyze these inventory metrics and provide insights: ' + $json.summary }}"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "AI Generate Insights",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "managers@example.com",
+        "subject": "Weekly Inventory Report",
+        "message": "={{ 'Here is the weekly report:\\n\\n' + $json.message.content }}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Email Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "channel": "#inventory-reports",
+        "text": "={{ 'Weekly Inventory Insights:\\n' + $json.message.content }}",
+        "otherOptions": {}
+      },
+      "id": "6",
+      "name": "Slack Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Cron Trigger (Weekly)": {
+      "main": [
+        [
+          {
+            "node": "Read Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Inventory": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Metrics": {
+      "main": [
+        [
+          {
+            "node": "AI Generate Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Generate Insights": {
+      "main": [
+        [
+          {
+            "node": "Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
