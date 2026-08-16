@@ -1,0 +1,238 @@
+{
+  "name": "WF3: Supplier Communication & Approval",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "po-approval",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.poData.estimated_cost }}",
+              "operation": "larger",
+              "value2": 5000
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "IF > $5000",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "channel": "#procurement-approvals",
+        "text": "={{ 'High value PO needs approval: ' + $json.poData.po_id + ' for $' + $json.poData.estimated_cost }}",
+        "attachments": [
+          {
+            "title": "Approval Request",
+            "text": "={{ $json.poData.ai_recommendation }}",
+            "actions": [
+              {
+                "name": "approve",
+                "text": "Approve",
+                "type": "button",
+                "value": "approve"
+              },
+              {
+                "name": "reject",
+                "text": "Reject",
+                "type": "button",
+                "value": "reject",
+                "style": "danger"
+              }
+            ]
+          }
+        ],
+        "otherOptions": {}
+      },
+      "id": "3",
+      "name": "Slack Request Approval",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [500, 100]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-response",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Wait for Approval Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.payload.actions[0].value }}",
+              "value2": "approve"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Is Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Purchase_Orders",
+          "mode": "name"
+        },
+        "key": "po_id",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Update PO Status (Approved)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Purchase_Orders",
+          "mode": "name"
+        },
+        "key": "po_id",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Update PO Status (Rejected)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "supplier@example.com",
+        "subject": "={{ 'Purchase Order: ' + $('Webhook Trigger').item.json.poData.po_id }}",
+        "message": "={{ 'Please fulfill the following order: ' + $('Webhook Trigger').item.json.poData.quantity_ordered + ' units.' }}",
+        "options": {}
+      },
+      "id": "8",
+      "name": "Send PO Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1300, 100]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF > $5000",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF > $5000": {
+      "main": [
+        [
+          {
+            "node": "Slack Request Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update PO Status (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Request Approval": {
+      "main": [
+        [
+          {
+            "node": "Wait for Approval Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Approval Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Approved?": {
+      "main": [
+        [
+          {
+            "node": "Update PO Status (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update PO Status (Rejected)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update PO Status (Approved)": {
+      "main": [
+        [
+          {
+            "node": "Send PO Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
