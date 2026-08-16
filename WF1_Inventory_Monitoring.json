@@ -1,0 +1,187 @@
+{
+  "name": "WF1: Inventory Monitoring & Stock Updates",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 30,
+              "unit": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Inventory_Master",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Read Inventory_Master",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst lowStockItems = items.filter(item => item.current_stock <= item.reorder_point);\nreturn { lowStockItems };"
+      },
+      "id": "3",
+      "name": "Check Low Stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.lowStockItems.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Any low stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_WF2_WEBHOOK_URL_HERE",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "items",
+              "value": "={{ $json.lowStockItems }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "Trigger WF2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_WF6_WEBHOOK_URL_HERE",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "workflow",
+              "value": "WF1"
+            },
+            {
+              "name": "event_type",
+              "value": "SCAN"
+            },
+            {
+              "name": "details",
+              "value": "={{ { items_scanned: $node['Read Inventory_Master'].json.length, low_stock_count: $json.lowStockItems.length } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Log Scan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Inventory_Master",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Inventory_Master": {
+      "main": [
+        [
+          {
+            "node": "Check Low Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Low Stock": {
+      "main": [
+        [
+          {
+            "node": "Any low stock?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any low stock?": {
+      "main": [
+        [
+          {
+            "node": "Trigger WF2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger WF2": {
+      "main": [
+        [
+          {
+            "node": "Log Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
