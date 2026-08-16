@@ -1,0 +1,227 @@
+{
+  "name": "WF4: Delivery Tracking & Inventory Update",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "delivery-received",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Purchase_Orders",
+          "mode": "name"
+        },
+        "lookupColumn": "po_id",
+        "lookupValue": "={{ $json.body.po_id }}",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Lookup PO",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $('Webhook Trigger').item.json.body.quantity_delivered }}",
+              "operation": "equal",
+              "value2": "={{ $json.quantity_ordered }}"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Qty Matches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "operation": "lookup",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Inventory_Master",
+          "mode": "name"
+        },
+        "lookupColumn": "product_id",
+        "lookupValue": "={{ $json.product_id }}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Get Current Stock",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Inventory_Master",
+          "mode": "name"
+        },
+        "key": "product_id",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "current_stock": "={{ $json.current_stock + $('Webhook Trigger').item.json.body.quantity_delivered }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "Update Inventory",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Delivery_Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "po_id": "={{ $('Webhook Trigger').item.json.body.po_id }}",
+            "quantity_delivered": "={{ $('Webhook Trigger').item.json.body.quantity_delivered }}",
+            "delivery_date": "={{ new Date().toISOString() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Append to Delivery_Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "channel": "#warehouse-updates",
+        "text": "={{ 'Delivery received for PO: ' + $('Webhook Trigger').item.json.body.po_id }}",
+        "otherOptions": {}
+      },
+      "id": "7",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1300, 100]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Lookup PO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup PO": {
+      "main": [
+        [
+          {
+            "node": "Qty Matches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qty Matches?": {
+      "main": [
+        [
+          {
+            "node": "Get Current Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Current Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Stock": {
+      "main": [
+        [
+          {
+            "node": "Update Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Inventory": {
+      "main": [
+        [
+          {
+            "node": "Append to Delivery_Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Delivery_Log": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
