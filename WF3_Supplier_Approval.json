@@ -7,11 +7,15 @@
         "path": "po-approval",
         "options": {}
       },
-      "id": "1",
+      "id": "62d4819e-375f-4fa6-bfec-51738239cb33",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [100, 200]
+      "position": [
+        -400,
+        112
+      ],
+      "webhookId": "63aa786b-0352-4263-8c1a-7dcbe4db1c0b"
     },
     {
       "parameters": {
@@ -25,73 +29,58 @@
           ]
         }
       },
-      "id": "2",
+      "id": "903d996a-99ae-437b-8109-040ddc38d131",
       "name": "IF > $5000",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [300, 200]
+      "position": [
+        -208,
+        112
+      ]
     },
     {
       "parameters": {
-        "channel": "#procurement-approvals",
-        "text": "={{ 'High value PO needs approval: ' + $json.poData.po_id + ' for $' + $json.poData.estimated_cost }}",
-        "attachments": [
-          {
-            "title": "Approval Request",
-            "text": "={{ $json.poData.ai_recommendation }}",
-            "actions": [
-              {
-                "name": "approve",
-                "text": "Approve",
-                "type": "button",
-                "value": "approve"
-              },
-              {
-                "name": "reject",
-                "text": "Reject",
-                "type": "button",
-                "value": "reject",
-                "style": "danger"
-              }
-            ]
-          }
-        ],
-        "otherOptions": {}
+        "text": "=High value PO needs approval: {{$json.poData.po_id}} for ${{$json.poData.estimated_cost}}\nReasoning: {{$json.poData.ai_recommendation}}\n\n\u2705 APPROVE: {{$execution.resumeUrl}}?action=approve\n\u274c REJECT: {{$execution.resumeUrl}}?action=reject",
+        "chatId": "-5447726193",
+        "additionalFields": {},
+        "resource": "message",
+        "operation": "sendMessage"
       },
-      "id": "3",
-      "name": "Slack Request Approval",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2,
-      "position": [500, 100]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "slack-response",
-        "options": {}
-      },
-      "id": "4",
-      "name": "Wait for Approval Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [700, 100]
+      "id": "9726dcaa-bc00-4b6d-bfcb-666c1cf5d0ec",
+      "name": "Telegram Request Approval",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "1f8994d7-7d81-4c2e-be79-0845c309d885",
+      "credentials": {
+        "telegramApi": {
+          "id": "gYl2UgkWuWJ0GEAc",
+          "name": "Telegram account"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.body.payload.actions[0].value }}",
+              "value1": "={{ $json.query.action }}",
               "value2": "approve"
             }
           ]
         }
       },
-      "id": "5",
+      "id": "a3b3e506-6dd5-464c-82a2-9d155325e297",
       "name": "Is Approved?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [900, 100]
+      "position": [
+        400,
+        0
+      ]
     },
     {
       "parameters": {
@@ -103,17 +92,37 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "Purchase_Orders",
-          "mode": "name"
+          "value": 685519,
+          "mode": "list",
+          "cachedResultName": "Purchase_Orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1bwj7MGobvcfDljlaO65o4hchdPWCdqGm8utdLaiDPOg/edit#gid=685519"
         },
-        "key": "po_id",
+        "columnToMatchOn": "po_id",
+        "valueToMatchOn": "={{ $('Webhook Trigger').item.json.body.poData.po_id }}",
+        "fieldsUi": {
+          "values": [
+            {
+              "column": "status",
+              "fieldValue": "Approved"
+            }
+          ]
+        },
         "options": {}
       },
-      "id": "6",
+      "id": "ec9bdfa2-ab13-4ab6-90c9-884fe4028b4f",
       "name": "Update PO Status (Approved)",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 3,
-      "position": [1100, 100]
+      "position": [
+        608,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fKbixbYmmzfzqNsX",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
@@ -128,29 +137,73 @@
           "value": "Purchase_Orders",
           "mode": "name"
         },
-        "key": "po_id",
+        "columnToMatchOn": "po_id",
+        "valueToMatchOn": "={{ $('Webhook Trigger').item.json.body.poData.po_id }}",
+        "fieldsUi": {
+          "values": [
+            {
+              "column": "status",
+              "fieldValue": "Rejected"
+            }
+          ]
+        },
         "options": {}
       },
-      "id": "7",
+      "id": "886f615a-fc58-4501-90d8-084b23e04a1b",
       "name": "Update PO Status (Rejected)",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 3,
-      "position": [1100, 300]
+      "position": [
+        608,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fKbixbYmmzfzqNsX",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
-        "sendTo": "supplier@example.com",
-        "subject": "={{ 'Purchase Order: ' + $('Webhook Trigger').item.json.poData.po_id }}",
-        "message": "={{ 'Please fulfill the following order: ' + $('Webhook Trigger').item.json.poData.quantity_ordered + ' units.' }}",
+        "sendTo": "atuly232002@gmail.com",
+        "subject": "={{ 'Purchase Order: ' + $('Webhook Trigger').first().json.body.poData.po_id }}",
+        "message": "={{ 'Please fulfill the following order: ' + $('Webhook Trigger').item.json.body.poData.order_quantity + ' units of product ' + $('Webhook Trigger').item.json.body.poData.product_id + '. Estimated Cost: $' + $('Webhook Trigger').item.json.body.poData.estimated_cost }}",
         "options": {}
       },
-      "id": "8",
+      "id": "fe60ca53-1f94-4f65-846c-4e131e32b20a",
       "name": "Send PO Email",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
-      "position": [1300, 100]
+      "position": [
+        800,
+        0
+      ],
+      "webhookId": "3b42e996-19e1-4862-b39e-27c582c3bfe3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Db5EIUqeFILlqZVA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        -48
+      ],
+      "id": "7eec9be3-85c0-4602-9dca-a4d7010edd2c",
+      "name": "Wait",
+      "webhookId": "bd22dad3-4bcd-4e79-b25b-5e244a35b981"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Trigger": {
       "main": [
@@ -167,7 +220,7 @@
       "main": [
         [
           {
-            "node": "Slack Request Approval",
+            "node": "Telegram Request Approval",
             "type": "main",
             "index": 0
           }
@@ -175,28 +228,6 @@
         [
           {
             "node": "Update PO Status (Approved)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Slack Request Approval": {
-      "main": [
-        [
-          {
-            "node": "Wait for Approval Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait for Approval Webhook": {
-      "main": [
-        [
-          {
-            "node": "Is Approved?",
             "type": "main",
             "index": 0
           }
@@ -231,8 +262,42 @@
           }
         ]
       ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Is Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Request Approval": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
-  "settings": {}
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7413f1ce-076b-4242-80f2-9ef50e7bfee5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01c98dcf6a9219bb8eb407bcfa82b0ff4cfbe09f0f9996bf51d28b9739117c5c"
+  },
+  "nodeGroups": [],
+  "id": "UlHNS5nHo7JddAUD",
+  "tags": []
 }
