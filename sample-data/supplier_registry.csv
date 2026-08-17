@@ -1,0 +1,6 @@
+Supplier_ID,Name,Email,Phone,Contact_Person,Lead_Time_Days,Reliability_Score,Payment_Terms,Preferred,Notes
+SUP-001,TechSupply India,orders@techsupply.in,+919876543210,Rajesh Kumar,3,95,Net 30,TRUE,Primary electronics vendor
+SUP-002,Furniture Hub,purchase@furniturehub.com,+919876543211,Priya Sharma,7,88,Net 45,TRUE,Furniture specialist
+SUP-003,Lighting Solutions,sales@lightingsol.co.in,+919876543212,Amit Patel,5,92,Net 30,TRUE,Lighting & electrical
+SUP-004,Stationery Plus,orders@stationeryplus.in,+919876543213,Neha Singh,2,90,Net 15,TRUE,Stationery bulk orders
+SUP-005,Display Tech,procurement@displaytech.com,+919876543214,Vikram Rao,10,85,Net 60,FALSE,Monitors & displays

@@ -1,0 +1,21 @@
+product_id,product_name,category,warehouse_id,current_stock,reorder_point,max_stock_level,unit_price,supplier_id
+SKU-001,Wireless Mouse,Electronics,WH-01,15,20,200,12.99,SUP-001
+SKU-002,USB-C Cable,Electronics,WH-01,25,50,300,5.49,SUP-001
+SKU-003,Office Chair,Furniture,WH-02,8,10,50,149.99,SUP-002
+SKU-004,LED Desk Lamp,Lighting,WH-01,45,30,150,34.99,SUP-003
+SKU-005,Notebook A5,Stationery,WH-03,35,100,500,2.99,SUP-004
+SKU-006,Whiteboard Marker Set,Stationery,WH-03,18,50,200,8.99,SUP-004
+SKU-007,Standing Desk,Furniture,WH-02,3,5,25,399.99,SUP-002
+SKU-008,Wireless Keyboard,Electronics,WH-01,22,25,200,29.99,SUP-001
+SKU-009,Monitor 27",Electronics,WH-01,12,15,80,249.99,SUP-005
+SKU-010,Ergonomic Mouse Pad,Accessories,WH-03,30,40,250,14.99,SUP-003
+SKU-011,Mechanical Keyboard,Electronics,WH-01,18,20,150,89.99,SUP-001
+SKU-012,Webcam 1080p,Electronics,WH-01,25,30,200,49.99,SUP-001
+SKU-013,Desk Organizer,Accessories,WH-03,40,50,300,19.99,SUP-004
+SKU-014,Floor Lamp,Lighting,WH-01,12,15,100,79.99,SUP-003
+SKU-015,Bookshelf 5-Tier,Furniture,WH-02,7,10,40,129.99,SUP-002
+SKU-016,HDMI Cable 2m,Electronics,WH-01,30,40,250,9.99,SUP-001
+SKU-017,Tablet Stand,Accessories,WH-03,22,25,200,24.99,SUP-004
+SKU-018,Conference Speaker,Electronics,WH-01,15,20,100,159.99,SUP-001
+SKU-019,Anti-Fatigue Mat,Accessories,WH-03,18,25,150,39.99,SUP-004
+SKU-020,Monitor Arm Mount,Accessories,WH-01,10,15,80,89.99,SUP-005
