@@ -29,6 +29,7 @@ A modular inventory and warehouse automation platform built entirely on **n8n**.
 16. [Possible extensions](#possible-extensions)
 17. [Documentation](#documentation)
 18. [License](#license)
+19. [Author](#author)
 
 ---
 
@@ -104,7 +105,7 @@ The platform is composed of **six independent n8n workflows**. Four form the cor
 | **WF5** | Inventory Analytics & Reports | Cron, weekly | Aggregates stock health metrics, has an LLM write a short report, emails it out |
 | **WF6** | Audit Trail & Error Handling | Webhook, `/audit-log`, plus an Error Trigger | Central logging hub for workflow events and runtime errors; sends critical alerts |
 
-Full node by node detail for every workflow, including exact node types and what each one reads or writes, is in [`docs/Workflow_Documentation.docx`](docs/Workflow_Documentation.docx).
+Full node by node detail for every workflow, including exact node types and what each one reads or writes, is in [`docs/Workflow_Documentation.pdf`](docs/Workflow_Documentation.pdf).
 
 ### WF1, Inventory Monitoring & Stock Updates
 
@@ -264,17 +265,24 @@ Exceeds the assignment's minimum of 4 to 6 workflows and 20 to 25 total nodes.
 ```
 .
 ├── README.md
-├── workflows/
-│   ├── WF1_Inventory_Monitoring_Stock_Updates.json
-│   ├── WF2_Low_Stock_Detection_Purchase_Request.json
-│   ├── WF3_Supplier_Communication_Approval.json
-│   ├── WF4_Delivery_Tracking_Inventory_Update.json
-│   ├── WF5_Inventory_Analytics_Reports.json
-│   └── WF6_Audit_Trail_Error_Handling.json
-└── docs/
-    ├── Technical_Documentation.docx   (problem analysis, architecture, implementation, advanced features)
-    └── Workflow_Documentation.docx    (node by node reference for every workflow)
+├── .gitignore
+├── Architecture diagram.pdf
+├── WF1_Inventory_Monitoring.json
+├── WF2_Low_Stock_Detection.json
+├── WF3_Supplier_Approval.json
+├── WF4_Delivery_Tracking.json
+├── WF5_Analytics_Reports.json
+├── WF6_Audit_Error_Handling.json
+├── docs/
+│   ├── Technical_Documentation.pdf   (problem analysis, architecture, implementation, advanced features)
+│   └── Workflow_Documentation.pdf    (node by node reference for every workflow)
+├── sample-data/
+│   └── example rows for seeding the Google Sheet (Inventory_Master, Supplier_Registry, etc.)
+└── workflow-diagram/
+    └── exported architecture and event flow diagram images
 ```
+
+All six workflow JSON files live at the repository root rather than in a `workflows/` subfolder. The two write-ups plus the standalone architecture diagram are split into `docs/` and the root level PDF.
 
 ## Tech stack
 
@@ -305,7 +313,7 @@ Exceeds the assignment's minimum of 4 to 6 workflows and 20 to 25 total nodes.
 
 2. **Create the Google Sheet.** Set up one spreadsheet with five tabs, named exactly: `Inventory_Master`, `Supplier_Registry`, `Purchase_Orders`, `Delivery_Log`, `Audit_Trail`. Add the columns listed in the Data model section to each tab, and seed `Inventory_Master` and `Supplier_Registry` with a few rows so the platform has something to act on.
 
-3. **Import the workflows.** In n8n: Workflows, then Import from File, and import each of the six files in `workflows/`, one at a time.
+3. **Import the workflows.** In n8n: Workflows, then Import from File, and import each of the six `WF*.json` files at the repository root, one at a time.
 
 4. **Create credentials in n8n:**
    - Google Sheets OAuth2, used by every workflow that touches the spreadsheet
@@ -377,8 +385,11 @@ Exceeds the assignment's minimum of 4 to 6 workflows and 20 to 25 total nodes.
 
 ## Documentation
 
-- `docs/Technical_Documentation.docx`, problem analysis, workflow architecture, implementation summary, and advanced features writeup
-- `docs/Workflow_Documentation.docx`, detailed node by node reference for all six workflows
+- `docs/Technical_Documentation.pdf`, problem analysis, workflow architecture, implementation summary, and advanced features writeup
+- `docs/Workflow_Documentation.pdf`, detailed node by node reference for all six workflows
+- `Architecture diagram.pdf`, standalone system architecture and event flow diagrams
+- `workflow-diagram/`, exported diagram images
+- `sample-data/`, example rows for seeding the Google Sheet before a first run
 
 ## License
 
