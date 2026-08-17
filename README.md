@@ -1,4 +1,4 @@
-# Automated Smart Inventory Management System
+# Smart-Inventory-Warehouse-Automation-Platform
 
 ## 1. Problem Analysis
 
